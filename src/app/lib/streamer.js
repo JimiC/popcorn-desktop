@@ -35,7 +35,7 @@
     WebTorrentStreamer.prototype = {
 
         // wrapper for handling a torrent
-        start: function(model) {
+        start: function (model) {
             // if webtorrent is created/running, we stop/destroy it
             if (this.webtorrent) {
                 this.stop();
@@ -53,11 +53,14 @@
         },
 
         // kill the streamer
-        stop: function() {
+        stop: function () {
             if (this.webtorrent) {
                 // update ratio
-                AdvSettings.set('totalDownloaded', Settings.totalDownloaded + this.torrentModel.get('torrent').downloaded);
-                AdvSettings.set('totalUploaded', Settings.totalUploaded + this.torrentModel.get('torrent').uploaded);
+                var torrent = this.torrentModel.get('torrent');
+                if (torrent) {
+                    AdvSettings.set('totalDownloaded', Settings.totalDownloaded + torrent.downloaded);
+                    AdvSettings.set('totalUploaded', Settings.totalUploaded + torrent.uploaded);
+                }
                 this.webtorrent.destroy();
             }
 
@@ -91,7 +94,7 @@
         },
 
         // fire webtorrent and resolve the torrent
-        fetchTorrent: function(torrentInfo) {
+        fetchTorrent: function (torrentInfo) {
             return new Promise(function (resolve, reject) {
 
                 var client = this.getWebTorrentInstance();
@@ -157,7 +160,7 @@
             App.Trakt.client.matcher.match({
                 filename: fileName,
                 torrent: torrent.name
-            }).then(function(metadatas) {
+            }).then(function (metadatas) {
                 var props = {};
 
                 var qualities = {
@@ -189,7 +192,7 @@
                 this.lookForImages(metadatas);
                 this.handleSubtitles();
 
-            }.bind(this)).catch(function(err) {
+            }.bind(this)).catch(function (err) {
                 win.error('An error occured while trying to get metadata', err);
                 this.torrentModel.set('title', fileName);
                 this.handleSubtitles();
@@ -395,13 +398,13 @@
                     }));
                 } else {
                     // after downloaded subtitles, we set the srt file to streamInfo
-                    App.vent.on('subtitle:downloaded', function(subtitlePath) {
+                    App.vent.on('subtitle:downloaded', function (subtitlePath) {
                         if (subtitlePath) {
                             this.streamInfo.set('subFile', subtitlePath);
                             App.vent.trigger('subtitle:convert', {
                                 path: subtitlePath,
                                 language: defaultSubtitle
-                            }, function(err, res) {
+                            }, function (err, res) {
                                 if (err) {
                                     win.error('error converting subtitles', err);
                                     this.streamInfo.set('subFile', null);
@@ -483,14 +486,14 @@
         },
 
         // find a random port
-        generatePortNumber: function() {
+        generatePortNumber: function () {
             var min = 1024, max = 65535;
 
             return Math.floor(Math.random() * (max - min)) + min;
         },
 
         // never duplicate webtorrent
-        getWebTorrentInstance: function() {
+        getWebTorrentInstance: function () {
             if (this.webtorrent === null) {
                 this.webtorrent = new WebTorrent({
                     maxConns: parseInt(Settings.connectionLimit, 10) || 55,
